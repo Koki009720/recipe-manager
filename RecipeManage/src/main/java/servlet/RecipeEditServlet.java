@@ -1,45 +1,40 @@
 package servlet;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
 import model.Recipe;
+import model.RecipeDao;
 
 @WebServlet("/RecipeEditServlet")
 public class RecipeEditServlet extends HttpServlet {
-	private static final long serialVersionUID = 1L;
 
-	protected void doPost(HttpServletRequest request,
-			HttpServletResponse response)
-			throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
 
-		request.setCharacterEncoding("UTF-8");
+        request.setCharacterEncoding("UTF-8");
 
-		String indexText = request.getParameter("index");
+        String idText = request.getParameter("id");
 
-		HttpSession session = request.getSession();
+        try {
+            int id = Integer.parseInt(idText);
 
-		ArrayList<Recipe> recipeList =
-				(ArrayList<Recipe>) session.getAttribute("recipeList");
+            RecipeDao dao = new RecipeDao();
+            Recipe recipe = dao.selectRecipeById(id);
 
-		int index = Integer.parseInt(indexText);
+            request.setAttribute("recipe", recipe);
 
-		Recipe recipe = recipeList.get(index);
+            request.getRequestDispatcher("/RecipeAdd.jsp")
+                    .forward(request, response);
 
-		request.setAttribute("recipe", recipe);
-		
-		request.setAttribute("editIndex", indexText);
-
-
-		request.getRequestDispatcher("/RecipeAdd.jsp")
-				.forward(request, response);
-
-	}
+        } catch (Exception e) {
+            e.printStackTrace();
+            response.sendRedirect(request.getContextPath() + "/RecipeList.jsp");
+        }
+    }
 }

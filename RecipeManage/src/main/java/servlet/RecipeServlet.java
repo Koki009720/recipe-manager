@@ -1,16 +1,14 @@
 package servlet;
 
 import java.io.IOException;
-import java.util.ArrayList;
 
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
 
-import model.Recipe;
+import model.RecipeDao;
 
 @WebServlet("/RecipeServlet")
 public class RecipeServlet extends HttpServlet {
@@ -21,37 +19,79 @@ public class RecipeServlet extends HttpServlet {
 
 		request.setCharacterEncoding("UTF-8");
 
+		
+		//入力されたデータを取得
 		String recipeName = request.getParameter("recipe_name");
 		String url = request.getParameter("url");
 		String memo = request.getParameter("memo");
-		//nullの対処
+		String materials = request.getParameter("materials");
+		String steps = request.getParameter("steps");
+		String thumbnailUrl = createThumbnailUrl(url);
+
 		if (recipeName == null || recipeName.isEmpty()) {
 			request.setAttribute("errorMessage", "料理名を入力してください。");
 			request.getRequestDispatcher("/RecipeAdd.jsp")
 					.forward(request, response);
 			return;
 		}
-		
-		Recipe recipe = new Recipe();
-		
-		recipe.setRecipeName(recipeName);
-		recipe.setUrl(url);
-		recipe.setMemo(memo);
-		
-		HttpSession session = request.getSession();
 
-		ArrayList<Recipe> recipeList =
-			(ArrayList<Recipe>) session.getAttribute("recipeList");
+		try {
+			RecipeDao dao = new RecipeDao();
+			String idText = request.getParameter("id");
 
-		if (recipeList == null) {
-			recipeList = new ArrayList<Recipe>();
+			if (idText != null && !idText.isEmpty()) {
+				int id = Integer.parseInt(idText);
+				dao.updateRecipe(id, recipeName, url, memo, materials, steps, thumbnailUrl);
+			} else {
+				dao.insertRecipe(recipeName, url, memo, materials, steps, thumbnailUrl);
+			}
+
+			response.sendRedirect(request.getContextPath() + "/RecipeList.jsp");
+
+		} catch (Exception e) {
+			e.printStackTrace();
+			request.setAttribute("errorMessage", "登録に失敗しました。");
+			request.getRequestDispatcher("/RecipeAdd.jsp")
+					.forward(request, response);
 		}
+	}
+	private String createThumbnailUrl(String url) {
+	    if (url == null || url.length() == 0) {
+	        return "";
+	    }
 
-		recipeList.add(recipe);
+	    String videoId = "";
 
-		session.setAttribute("recipeList", recipeList);
+	    if (url.contains("watch?v=")) {
+	        videoId = url.substring(url.indexOf("watch?v=") + 8);
 
-		request.getRequestDispatcher("/RecipeList.jsp")
-				.forward(request, response);
+	        if (videoId.contains("&")) {
+	            videoId = videoId.substring(0, videoId.indexOf("&"));
+	        }
+	    } else if (url.contains("youtu.be/")) {
+	        videoId = url.substring(url.indexOf("youtu.be/") + 9);
+
+	        if (videoId.contains("?")) {
+	            videoId = videoId.substring(0, videoId.indexOf("?"));
+	        }
+	    }
+	    else if (url.contains("/shorts/")) {
+
+	        videoId = url.substring(url.indexOf("/shorts/") + 8);
+
+	        if (videoId.contains("?")) {
+	            videoId = videoId.substring(0, videoId.indexOf("?"));
+	        }
+
+	        if (videoId.contains("/")) {
+	            videoId = videoId.substring(0, videoId.indexOf("/"));
+	        }
+	    }
+
+	    if (videoId.length() > 0) {
+	        return "https://img.youtube.com/vi/" + videoId + "/hqdefault.jpg";
+	    }
+
+	    return "";
 	}
 }

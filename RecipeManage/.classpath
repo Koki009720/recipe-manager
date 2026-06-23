@@ -13,5 +13,7 @@
 			<attribute name="owner.project.facets" value="jst.web"/>
 		</attributes>
 	</classpathentry>
+	<classpathentry kind="lib" path="src/main/webapp/WEB-INF/lib/sqlite-jdbc-3.53.2.0-natives-windows.jar"/>
+	<classpathentry kind="lib" path="src/main/webapp/WEB-INF/lib/sqlite-jdbc-3.53.2.0-without-natives.jar"/>
 	<classpathentry kind="output" path="build/classes"/>
 </classpath>
