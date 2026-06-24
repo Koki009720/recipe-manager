@@ -1,16 +1,21 @@
 package servlet;
 
+import java.io.File;
 import java.io.IOException;
+import java.util.UUID;
 
 import javax.servlet.ServletException;
+import javax.servlet.annotation.MultipartConfig;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.Part;
 
 import model.RecipeDao;
 
 @WebServlet("/RecipeServlet")
+@MultipartConfig
 public class RecipeServlet extends HttpServlet {
 	private static final long serialVersionUID = 1L;
 
@@ -26,7 +31,43 @@ public class RecipeServlet extends HttpServlet {
 		String memo = request.getParameter("memo");
 		String materials = request.getParameter("materials");
 		String steps = request.getParameter("steps");
-		String thumbnailUrl = createThumbnailUrl(url);
+		String tag = request.getParameter("tag");
+		if (tag != null) {
+			tag = tag.replace("、", ",");
+		}
+
+		String oldThumbnailUrl = request.getParameter("old_thumbnail_url");
+
+		String thumbnailUrl = oldThumbnailUrl;
+
+		if (thumbnailUrl == null || thumbnailUrl.isEmpty()) {
+		    thumbnailUrl = createThumbnailUrl(url);
+		}
+
+		Part imagePart = request.getPart("image");
+
+		if (imagePart != null && imagePart.getSize() > 0) {
+			String uploadPath = request.getServletContext().getRealPath("/upload");
+
+			File uploadDir = new File(uploadPath);
+			if (!uploadDir.exists()) {
+				uploadDir.mkdirs();
+			}
+
+			String submittedFileName = imagePart.getSubmittedFileName();
+			String extension = "";
+
+			if (submittedFileName != null && submittedFileName.lastIndexOf(".") != -1) {
+				extension = submittedFileName.substring(submittedFileName.lastIndexOf("."));
+			}
+
+			String saveFileName = UUID.randomUUID().toString() + extension;
+			String savePath = uploadPath + File.separator + saveFileName;
+
+			imagePart.write(savePath);
+
+			thumbnailUrl = request.getContextPath() + "/upload/" + saveFileName;
+		}
 
 		if (recipeName == null || recipeName.isEmpty()) {
 			request.setAttribute("errorMessage", "料理名を入力してください。");
@@ -41,9 +82,9 @@ public class RecipeServlet extends HttpServlet {
 
 			if (idText != null && !idText.isEmpty()) {
 				int id = Integer.parseInt(idText);
-				dao.updateRecipe(id, recipeName, url, memo, materials, steps, thumbnailUrl);
+				dao.updateRecipe(id, recipeName, url, memo, materials, steps, thumbnailUrl, tag);
 			} else {
-				dao.insertRecipe(recipeName, url, memo, materials, steps, thumbnailUrl);
+				dao.insertRecipe(recipeName, url, memo, materials, steps, thumbnailUrl, tag);
 			}
 
 			response.sendRedirect(request.getContextPath() + "/RecipeList.jsp");
@@ -53,6 +94,7 @@ public class RecipeServlet extends HttpServlet {
 			request.setAttribute("errorMessage", "登録に失敗しました。");
 			request.getRequestDispatcher("/RecipeAdd.jsp")
 					.forward(request, response);
+			return;
 		}
 	}
 	private String createThumbnailUrl(String url) {

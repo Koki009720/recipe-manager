@@ -8,12 +8,12 @@ import java.util.ArrayList;
 public class RecipeDao {
 
 	// レシピを追加
-	public void insertRecipe(String recipeName, String url, String memo, String materials, String steps,
-			String thumbnailUrl) throws Exception {
+	public void insertRecipe(String recipeName, String url, String memo,
+			String materials, String steps, String thumbnailUrl, String tag) throws Exception {
 
 		String sql = "INSERT INTO recipes "
-				+ "(recipe_name, url, memo, materials, steps, thumbnail_url) "
-				+ "VALUES (?, ?, ?, ?, ?, ?)";
+				+ "(recipe_name, url, memo, materials, steps, thumbnail_url, tag) "
+				+ "VALUES (?, ?, ?, ?, ?, ?, ?)";
 
 		Connection con = DbUtil.getConnection();
 		PreparedStatement pstmt = con.prepareStatement(sql);
@@ -24,6 +24,7 @@ public class RecipeDao {
 		pstmt.setString(4, materials);
 		pstmt.setString(5, steps);
 		pstmt.setString(6, thumbnailUrl);
+		pstmt.setString(7, tag);
 
 		pstmt.executeUpdate();
 
@@ -48,10 +49,10 @@ public class RecipeDao {
 
 	// レシピを更新
 	public void updateRecipe(int id, String recipeName, String url, String memo,
-			String materials, String steps, String thumbnailUrl) throws Exception {
+			String materials, String steps, String thumbnailUrl, String tag) throws Exception {
 
 		String sql = "UPDATE recipes "
-				+ "SET recipe_name = ?, url = ?, memo = ?, materials = ?, steps = ?, thumbnail_url = ? "
+				+ "SET recipe_name = ?, url = ?, memo = ?, materials = ?, steps = ?, thumbnail_url = ?, tag = ? "
 				+ "WHERE id = ?";
 
 		Connection con = DbUtil.getConnection();
@@ -63,7 +64,8 @@ public class RecipeDao {
 		pstmt.setString(4, materials);
 		pstmt.setString(5, steps);
 		pstmt.setString(6, thumbnailUrl);
-		pstmt.setInt(7, id);
+		pstmt.setString(7, tag);
+		pstmt.setInt(8, id);
 
 		pstmt.executeUpdate();
 
@@ -74,7 +76,8 @@ public class RecipeDao {
 	// レシピを表示(個別)
 	public Recipe selectRecipeById(int id) throws Exception {
 
-		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url FROM recipes WHERE id = ?";
+		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite, tag "
+				+ "FROM recipes WHERE id = ?";
 
 		Connection con = DbUtil.getConnection();
 		PreparedStatement pstmt = con.prepareStatement(sql);
@@ -94,6 +97,8 @@ public class RecipeDao {
 			recipe.setMaterials(rs.getString("materials"));
 			recipe.setSteps(rs.getString("steps"));
 			recipe.setThumbnailUrl(rs.getString("thumbnail_url"));
+			recipe.setFavorite(rs.getInt("favorite"));
+			recipe.setTag(rs.getString("tag"));
 		}
 
 		rs.close();
@@ -103,17 +108,23 @@ public class RecipeDao {
 		return recipe;
 	}
 
+	// レシピを表示(個別) 別名
+	public Recipe selectById(int id) throws Exception {
+		return selectRecipeById(id);
+	}
+
 	//検索機能
 	public ArrayList<Recipe> searchRecipes(String keyword) throws Exception {
 		ArrayList<Recipe> recipeList = new ArrayList<Recipe>();
 
-		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite "
-				+ "FROM recipes "
-				+ "WHERE recipe_name LIKE ? "
-				+ "OR memo LIKE ? "
-				+ "OR materials LIKE ? "
-				+ "OR steps LIKE ? "
-				+ "ORDER BY id DESC";
+		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite, tag "
+		        + "FROM recipes "
+		        + "WHERE recipe_name LIKE ? "
+		        + "OR memo LIKE ? "
+		        + "OR materials LIKE ? "
+		        + "OR steps LIKE ? "
+		        + "OR tag LIKE ? "
+		        + "ORDER BY id DESC";
 
 		Connection con = DbUtil.getConnection();
 		PreparedStatement pstmt = con.prepareStatement(sql);
@@ -123,7 +134,8 @@ public class RecipeDao {
 		pstmt.setString(2, searchWord);
 		pstmt.setString(3, searchWord);
 		pstmt.setString(4, searchWord);
-
+		pstmt.setString(5, searchWord);
+		
 		ResultSet rs = pstmt.executeQuery();
 
 		while (rs.next()) {
@@ -136,6 +148,7 @@ public class RecipeDao {
 			recipe.setSteps(rs.getString("steps"));
 			recipe.setThumbnailUrl(rs.getString("thumbnail_url"));
 			recipe.setFavorite(rs.getInt("favorite"));
+			recipe.setTag(rs.getString("tag"));
 
 			recipeList.add(recipe);
 		}
@@ -169,8 +182,8 @@ public class RecipeDao {
 
 		ArrayList<Recipe> recipeList = new ArrayList<Recipe>();
 
-		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite"
-				+ " FROM recipes ORDER BY id DESC";
+		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite, tag"
+		        + " FROM recipes ORDER BY id DESC";
 
 		Connection con = DbUtil.getConnection();
 		PreparedStatement pstmt = con.prepareStatement(sql);
@@ -187,6 +200,7 @@ public class RecipeDao {
 			recipe.setSteps(rs.getString("steps"));
 			recipe.setThumbnailUrl(rs.getString("thumbnail_url"));
 			recipe.setFavorite(rs.getInt("favorite"));
+			recipe.setTag(rs.getString("tag"));
 
 			recipeList.add(recipe);
 		}
@@ -203,10 +217,10 @@ public class RecipeDao {
 
 		ArrayList<Recipe> recipeList = new ArrayList<Recipe>();
 
-		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite"
-				+ " FROM recipes"
-				+ " WHERE favorite = 1"
-				+ " ORDER BY id DESC";
+		String sql = "SELECT id, recipe_name, url, memo, materials, steps, thumbnail_url, favorite, tag"
+		        + " FROM recipes"
+		        + " WHERE favorite = 1"
+		        + " ORDER BY id DESC";
 
 		Connection con = DbUtil.getConnection();
 		PreparedStatement pstmt = con.prepareStatement(sql);
@@ -223,6 +237,7 @@ public class RecipeDao {
 			recipe.setSteps(rs.getString("steps"));
 			recipe.setThumbnailUrl(rs.getString("thumbnail_url"));
 			recipe.setFavorite(rs.getInt("favorite"));
+			recipe.setTag(rs.getString("tag"));
 
 			recipeList.add(recipe);
 		}
@@ -234,5 +249,4 @@ public class RecipeDao {
 		return recipeList;
 
 	}
-
 }

@@ -14,27 +14,25 @@ import model.RecipeDao;
 @WebServlet("/RecipeEditServlet")
 public class RecipeEditServlet extends HttpServlet {
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+	protected void doPost(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
+    	
+    	String idText = request.getParameter("id");
 
-        request.setCharacterEncoding("UTF-8");
+    	try {
+    	    int id = Integer.parseInt(idText);
 
-        String idText = request.getParameter("id");
+    	    RecipeDao dao = new RecipeDao();
+    	    Recipe recipe = dao.selectRecipeById(id);
 
-        try {
-            int id = Integer.parseInt(idText);
 
-            RecipeDao dao = new RecipeDao();
-            Recipe recipe = dao.selectRecipeById(id);
+    	    request.setAttribute("recipe", recipe);
+  
 
-            request.setAttribute("recipe", recipe);
-
-            request.getRequestDispatcher("/RecipeAdd.jsp")
-                    .forward(request, response);
-
-        } catch (Exception e) {
-            e.printStackTrace();
-            response.sendRedirect(request.getContextPath() + "/RecipeList.jsp");
-        }
+    	    request.getRequestDispatcher("/RecipeAdd.jsp") .forward(request, response);
+    	} catch (Exception e) {
+    	    e.printStackTrace();
+    	    response.sendRedirect(request.getContextPath() + "/RecipeList.jsp");
+    	}
     }
 }
